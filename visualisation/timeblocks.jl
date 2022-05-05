@@ -31,12 +31,12 @@ function write2nc(file,summed_value, outputfile)
 end
 
 scenario = range(0,11)
-base = joinpath("../../202002060300")
+base = joinpath("../../202002080300")
 varname = "amount_of_precipitation"
 for i in scenario
     @show i
-    filename = string("202002060300_u1096_ng_ek",lpad(string(i),2,'0'),"_precipaccum_2km.nc")
-    outputfile = string("member",i,".nc")
+    filename = string("202002080300_u1096_ng_ek",lpad(string(i),2,'0'),"_precipaccum_2km.nc")
+    outputfile = joinpath(pwd(),"processed",string("member",i,".nc"))
     file = joinpath(base,filename)
     data = read_ensemble_memeber(file, varname)
     max_value = sliding_time(data)
