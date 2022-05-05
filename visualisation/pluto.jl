@@ -19,9 +19,6 @@ begin
 	import Pkg
 	Pkg.activate(@__DIR__)
 	Pkg.instantiate()
-	using HDF5
-	using Unitful
-	using UnitfulRecipes
 	using PlutoUI
     using GMT
 	using NetCDF
@@ -31,7 +28,7 @@ end
 begin
 	scenarios = range(1,11)
 	md"""
-	Select the scenario
+	Select the ensemble member
 	$(@bind scenario Slider(1:length(scenarios)))
 	"""
 end
@@ -82,40 +79,55 @@ function return_period!(period, rain, times)
 	end 
 end
 
+# ╔═╡ 3cffff75-ac0e-42b7-b531-5622bae02bc4
+function read_ensemble_member(file, varname)
+    data = NetCDF.open(file, varname)
+    return data
+end
+
+# ╔═╡ e89ff02d-ddb9-4527-9e67-50b475c5fc28
+function sliding_time(data)
+    max_value = data[:,:,1]
+    summed_value = data[:,:,1]
+    for t in 1:(length(data[1,1,:])-24)
+        summed_value .= sum(data[:,:,t:t+24], dims=3)
+        max_value .= max.(summed_value[:,:], max_value[:,:])
+    end
+    return max_value
+end
+
 # ╔═╡ cf27a2ef-bf6c-4415-a6be-5f095241d218
 begin
+	# Set up some local paths and fixed variables
 	times = [5,10,25,50,100]
-	G = read_processed(scenario)
-	period = zeros(size(G))
-	return_period!(@view(period[:,:]), G[:,:], times)
+	base = joinpath("../ForecastData/ensemble_files")
+	varname = "amount_of_precipitation"
+	# Load in the ensemble member
+	filename = string("202002080300_u1096_ng_ek",lpad(string(scenario),2,'0'),"_precipaccum_2km.nc")
+    file = joinpath(base,filename)
+    data = read_ensemble_member(file, varname)
+	# Calculating the accumlated rain fall over 24 hour windows
+	# Each forecast has a 54-hour lead time 
+    max_value = sliding_time(data)
+	# Set up dummy array for the return period array
+	period = zeros(size(max_value))
+	# Calculate return period from ERA file
+	return_period!(@view(period[:,:]), max_value[:,:], times)
+	# Plotting 
 	topo = makecpt(color=:ocean, range=[0,5,10,25,50,100], inverse=true)
 	period = adjoint(period)
 	grdimage(period[:,:], title="Ensemble Member No. $scenario",  color=topo)
-	# coast!(projection="t0.0/49.0/0.9996012717", region="-12/15/42/60")
 	coast!(projection="t-2.0/0.9996012717", region="-11.5/16/44/62")
 	colorbar!(equal=(range=true,), show=true)
 end
 
-# ╔═╡ c247b867-6927-461a-8e3a-b08d8621afca
-begin
-	ERA = joinpath("../Return_Periods_ERA5/regridded",string("ERA_RP_","5",".nc"))
-	var = "r5yrrp"
-	return_estimate = read_ERA(ERA, var)
-	@show maximum(return_estimate), minimum(return_estimate)
-	return_estimate = return_estimate'
-	topo2 = makecpt(color=:polar, range=(0,120), continuous=true)
-	grdimage(return_estimate[:,:], title="Ensemble Member No. $scenario",  color=topo2)
-	# coast!(projection="t4.0/49.0/0.9996012717", region="-10/10/42/60")
-	coast!(projection="t4.0/49.0/0.9996012717", region="-13/10/49/60")
-	colorbar!(color=topo2, xlabel = "Precipitation (mm/d)", show=true)
-end
-
 # ╔═╡ Cell order:
-# ╟─c7383ff4-ba4c-11eb-1977-b31b330b20d0
+# ╠═c7383ff4-ba4c-11eb-1977-b31b330b20d0
 # ╟─3805a307-ce89-49da-a32d-fbf89833e956
 # ╠═cf27a2ef-bf6c-4415-a6be-5f095241d218
 # ╟─afce6da7-3e48-49a6-8489-eb2acb2fd410
 # ╟─7a475e4b-84b4-472b-80ff-6c8f2bdd4493
 # ╟─c690e895-0e96-4428-be50-fa0631cea4b2
-# ╠═592ed9ba-59ee-470f-8f22-79bee034d87f
-# ╠═c247b867-6927-461a-8e3a-b08d8621afca
+# ╟─592ed9ba-59ee-470f-8f22-79bee034d87f
+# ╟─3cffff75-ac0e-42b7-b531-5622bae02bc4
+# ╟─e89ff02d-ddb9-4527-9e67-50b475c5fc28
