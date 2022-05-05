@@ -3,4 +3,4 @@ Data is acquired from https://cds.climate.copernicus.eu/cdsapp#!/dataset/sis-eur
 
 The return_period_<in_years>.nc are the outputs of the script for different return periods.
 
-The folder regridded contains ERA5 return period data regridded to the MetOffice weatherforecast grid
+The folder regridded contains ERA5 return period data regridded to the MetOffice weatherforecast grid which is used in the visualisation. 
