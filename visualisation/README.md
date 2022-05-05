@@ -1,4 +1,2 @@
 
-
-This folder contains the scripts and some of the data needed for the visualisation. 
-The rest of the data can be found in the return_periods_ERA5 folder. 
+This folder contains the scripts needed for the visualisation. The data which is used can be found under return_periods_ERA5/regridded and Forecast/statistics
